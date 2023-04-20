@@ -4,6 +4,7 @@ import { Statement } from "../entities/Statement";
 import { ICreateStatementDTO } from "../useCases/createStatement/ICreateStatementDTO";
 import { IGetBalanceDTO } from "../useCases/getBalance/IGetBalanceDTO";
 import { IGetStatementOperationDTO } from "../useCases/getStatementOperation/IGetStatementOperationDTO";
+import { ITransferStatementDTO } from "../useCases/TransferStatement/ITransferStatementDTO";
 import { IStatementsRepository } from "./IStatementsRepository";
 
 export class StatementsRepository implements IStatementsRepository {
@@ -41,7 +42,10 @@ export class StatementsRepository implements IStatementsRepository {
     >
   {
     const statement = await this.repository.find({
-      where: { user_id }
+      where: [
+        { user_id },
+        { sender_id: user_id }
+      ]
     });
 
     const balance = statement.reduce((acc, operation) => {
@@ -60,5 +64,17 @@ export class StatementsRepository implements IStatementsRepository {
     }
 
     return { balance }
+  }
+
+  async transfer({ sender_id, user_id, description, amount }: ITransferStatementDTO): Promise<Statement>{
+    const statement = Object.assign(new Statement, {
+      user_id,
+      sender_id,
+      description,
+      type: 'transfer',
+      amount
+     });
+
+    return await this.repository.save(statement);
   }
 }
